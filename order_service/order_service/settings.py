@@ -1,37 +1,40 @@
 import os
 from pathlib import Path
-
 from dotenv import load_dotenv
+from typing import List, Dict, Any
 
 load_dotenv()
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Основные настройки проекта
+BASE_DIR: Path = Path(__file__).resolve().parent.parent
+"""Базовая директория проекта."""
 
-SECRET_KEY = os.getenv('SECRET_KEY', 123)
+SECRET_KEY: str = os.getenv(
+    'SECRET_KEY',
+    'django-insecure--k#i2==p2rgsshf5$x0@2vm-legyxb+s6946jc4c+@z02u32q3'
+)
+"""Секретный ключ для криптографических операций Django."""
 
-# SECRET_KEY = 'django-insecure--k#i2==p2rgsshf5$x0@2vm-legyxb+s6946jc4c+@z02u32q3'
+DEBUG: bool = os.getenv('DEBUG', 'True') == 'True'
+"""Режим отладки (True для разработки, False для продакшена)."""
 
-IS_LOCAL = True
+ALLOWED_HOSTS: List[str] = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,web').split(',')
 
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
-# Application definition
-
-INSTALLED_APPS = [
+INSTALLED_APPS: List[str] = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'rest_framework',
+    'django_redis',
+    'django_celery_beat',
     'api.apps.ApiConfig',
 ]
+"""Список установленных приложений Django."""
 
-MIDDLEWARE = [
+MIDDLEWARE: List[str] = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -40,10 +43,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+"""Список middleware для обработки запросов."""
 
-ROOT_URLCONF = 'order_service.urls'
+ROOT_URLCONF: str = 'order_service.urls'
+"""Основной модуль маршрутов URL."""
 
-TEMPLATES = [
+TEMPLATES: List[Dict[str, Any]] = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
@@ -58,33 +63,35 @@ TEMPLATES = [
         },
     },
 ]
+"""Настройки шаблонов Django."""
 
-WSGI_APPLICATION = 'order_service.wsgi.application'
+WSGI_APPLICATION: str = 'order_service.wsgi.application'
+"""Точка входа для WSGI-приложения."""
 
+IS_LOCAL: bool = os.getenv('IS_LOCAL', 'True') == 'True'
+"""Флаг локальной разработки."""
 
 if IS_LOCAL:
-    DATABASES = {
+    DATABASES: Dict[str, Dict[str, Any]] = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
 else:
-    DATABASES = {
+    DATABASES: Dict[str, Dict[str, Any]] = {
         'default': {
-            'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-            'NAME': os.getenv('POSTGRES_DB', default='postgres'),
-            'USER': os.getenv('POSTGRES_USER', default='postgres'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='postgres'),
-            'HOST': os.getenv('DB_HOST', default='db'),
-            'PORT': os.getenv('DB_PORT', default='5432')
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.getenv('POSTGRES_DB', 'postgres'),
+            'USER': os.getenv('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+            'HOST': os.getenv('DB_HOST', 'db'),
+            'PORT': os.getenv('DB_PORT', '5432'),
         }
     }
+"""Настройки базы данных (SQLite для локальной разработки, PostgreSQL для продакшена)."""
 
-
-
-AUTH_PASSWORD_VALIDATORS = [
+AUTH_PASSWORD_VALIDATORS: List[Dict[str, str]] = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
@@ -98,16 +105,74 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+"""Валидаторы паролей для пользователей."""
 
+REST_FRAMEWORK: Dict[str, List[str]] = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+}
+"""Настройки Django REST Framework."""
 
-LLANGUAGE_CODE = 'ru-RU'
+# Настройки кэширования с django-redis
+CACHES: Dict[str, Dict[str, Any]] = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+"""Настройки кэширования с использованием Redis."""
 
-TIME_ZONE = "Europe/Moscow"
+# Настройки отправки писем
+EMAIL_BACKEND: str = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST: str = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT: int = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS: bool = True
+EMAIL_HOST_USER: str = os.getenv('EMAIL_HOST_USER', 'your-email@gmail.com')
+EMAIL_HOST_PASSWORD: str = os.getenv('EMAIL_HOST_PASSWORD', 'your-email-password')
+DEFAULT_FROM_EMAIL: str = EMAIL_HOST_USER
+SITE_URL: str = os.getenv('SITE_URL', 'http://localhost:8000')
+"""Настройки отправки электронной почты."""
 
-USE_I18N = True
+# Настройки Celery
+CELERY_BROKER_URL: str = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND: str = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT: List[str] = ['json']
+CELERY_TASK_SERIALIZER: str = 'json'
+CELERY_RESULT_SERIALIZER: str = 'json'
+CELERY_TIMEZONE: str = 'Europe/Moscow'
+"""Настройки брокера и backend для Celery."""
 
-USE_TZ = True
+# Настройки Celery Beat
+CELERY_BEAT_SCHEDULE: Dict[str, Dict[str, Any]] = {
+    'check-email-verification': {
+        'task': 'api.tasks.check_email_verification',
+        'schedule': 3600.0,  # Каждые час
+    },
+}
+"""Расписание задач для Celery Beat."""
 
-STATIC_URL = 'static/'
+LANGUAGE_CODE: str = 'ru-RU'
+"""Код языка приложения."""
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+TIME_ZONE: str = 'Europe/Moscow'
+"""Часовой пояс приложения."""
+
+USE_I18N: bool = True
+"""Использование интернационализации."""
+
+USE_TZ: bool = True
+"""Использование временных зон."""
+
+STATIC_URL: str = 'static/'
+"""URL для статических файлов."""
+
+DEFAULT_AUTO_FIELD: str = 'django.db.models.BigAutoField'
+"""Тип автоинкрементного поля по умолчанию."""
