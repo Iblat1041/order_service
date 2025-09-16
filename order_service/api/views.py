@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from django.shortcuts import get_object_or_404
 from django.db import models
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 from .models import Supplier, Category, Product, Stock, Order, UserProfile
 from .serializers import (
     SupplierSerializer, CategorySerializer, ProductSerializer,
@@ -30,6 +32,10 @@ class StockViewSet(viewsets.ModelViewSet):
     """ViewSet для управления остатками на складе."""
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
+
+    @method_decorator(cache_page(60 * 5))  # Кэш на 5 минут
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 class OrderViewSet(viewsets.ModelViewSet):
     """ViewSet для управления заказами, доступными только авторизованным пользователям."""

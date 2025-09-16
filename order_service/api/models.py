@@ -1,15 +1,33 @@
-from django.db import models
+from django.db.models import (
+    BooleanField, CASCADE, CharField, DateTimeField, DecimalField,
+    OneToOneField, PositiveIntegerField, ForeignKey, Model)
 from django.contrib.auth.models import User
 from django.utils import timezone
 from typing import Optional
 
-class Supplier(models.Model):
+
+class Supplier(Model):
     """Модель поставщика, содержащая информацию о поставщике товаров."""
-    name: models.CharField = models.CharField(max_length=255, verbose_name="Наименование организации")
-    country: models.CharField = models.CharField(max_length=100, verbose_name="Страна")
-    city: models.CharField = models.CharField(max_length=100, verbose_name="Город")
-    street: models.CharField = models.CharField(max_length=100, verbose_name="Улица")
-    building: models.CharField = models.CharField(max_length=50, verbose_name="Здание")
+    name: CharField = CharField(
+        max_length=255,
+        verbose_name="Наименование организации",
+        )
+    country: CharField = CharField(
+        max_length=100,
+        verbose_name="Страна",
+        )
+    city: CharField = CharField(
+        max_length=100,
+        verbose_name="Город",
+        )
+    street: CharField = CharField(
+        max_length=100,
+        verbose_name="Улица",
+        )
+    building: CharField = CharField(
+        max_length=50,
+        verbose_name="Здание",
+        )
 
     def __str__(self) -> str:
         """Возвращает строковое представление поставщика."""
@@ -19,14 +37,18 @@ class Supplier(models.Model):
         verbose_name = "Поставщик"
         verbose_name_plural = "Поставщики"
 
-class Category(models.Model):
+
+class Category(Model):
     """Модель категории товаров, поддерживающая иерархическую структуру."""
-    name: models.CharField = models.CharField(max_length=100, verbose_name="Название категории")
-    parent: Optional[models.ForeignKey] = models.ForeignKey(
+    name: CharField = CharField(
+        max_length=100,
+        verbose_name="Название категории",
+        )
+    parent: Optional[ForeignKey] = ForeignKey(
         'self',
         null=True,
         blank=True,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='subcategories',
         verbose_name="Родительская категория"
     )
@@ -39,22 +61,30 @@ class Category(models.Model):
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
 
-class Product(models.Model):
+
+class Product(Model):
     """Модель товара, связанного с поставщиком и категорией."""
-    name: models.CharField = models.CharField(max_length=255, verbose_name="Наименование")
-    supplier: models.ForeignKey = models.ForeignKey(
+    name: CharField = CharField(
+        max_length=255,
+        verbose_name="Наименование"
+        )
+    supplier: ForeignKey = ForeignKey(
         Supplier,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='products',
-        verbose_name="Поставщик"
+        verbose_name="Поставщик",
     )
-    category: models.ForeignKey = models.ForeignKey(
+    category: ForeignKey = ForeignKey(
         Category,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='products',
-        verbose_name="Категория"
+        verbose_name="Категория",
     )
-    price: models.DecimalField = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена за единицу")
+    price: DecimalField = DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Цена за единицу",
+        )
 
     def __str__(self) -> str:
         """Возвращает строковое представление товара."""
@@ -64,15 +94,18 @@ class Product(models.Model):
         verbose_name = "Товар"
         verbose_name_plural = "Товары"
 
-class Stock(models.Model):
+
+class Stock(Model):
     """Модель остатков товара на складе."""
-    product: models.ForeignKey = models.ForeignKey(
+    product: ForeignKey = ForeignKey(
         Product,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='stock',
         verbose_name="Товар"
     )
-    quantity: models.PositiveIntegerField = models.PositiveIntegerField(verbose_name="Количество")
+    quantity: PositiveIntegerField = PositiveIntegerField(
+        verbose_name="Количество",
+        )
 
     def __str__(self) -> str:
         """Возвращает строковое представление остатка на складе."""
@@ -82,15 +115,19 @@ class Stock(models.Model):
         verbose_name = "Остаток на складе"
         verbose_name_plural = "Остатки на складе"
 
-class Order(models.Model):
+
+class Order(Model):
     """Модель заказа, связанного с покупателем."""
-    buyer: models.ForeignKey = models.ForeignKey(
+    buyer: ForeignKey = ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='orders',
         verbose_name="Покупатель"
     )
-    order_date: models.DateTimeField = models.DateTimeField(default=timezone.now, verbose_name="Дата заказа")
+    order_date: DateTimeField = DateTimeField(
+        default=timezone.now,
+        verbose_name="Дата заказа",
+        )
 
     def __str__(self) -> str:
         """Возвращает строковое представление заказа."""
@@ -100,21 +137,24 @@ class Order(models.Model):
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
 
-class OrderItem(models.Model):
+
+class OrderItem(Model):
     """Модель элемента заказа, связывающего заказ и товар."""
-    order: models.ForeignKey = models.ForeignKey(
+    order: ForeignKey = ForeignKey(
         Order,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='items',
         verbose_name="Заказ"
     )
-    product: models.ForeignKey = models.ForeignKey(
+    product: ForeignKey = ForeignKey(
         Product,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         verbose_name="Товар"
     )
-    quantity: models.PositiveIntegerField = models.PositiveIntegerField(verbose_name="Количество")
-    purchase_price: models.DecimalField = models.DecimalField(
+    quantity: PositiveIntegerField = PositiveIntegerField(
+        verbose_name="Количество",
+        )
+    purchase_price: DecimalField = DecimalField(
         max_digits=10,
         decimal_places=2,
         verbose_name="Закупочная цена"
@@ -128,26 +168,41 @@ class OrderItem(models.Model):
         verbose_name = "Товар в заказе"
         verbose_name_plural = "Товары в заказе"
 
-class UserProfile(models.Model):
+
+class UserProfile(Model):
     """Модель профиля пользователя, расширяющая стандартную модель User."""
-    user: models.OneToOneField = models.OneToOneField(
+    user: OneToOneField = OneToOneField(
         User,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='profile',
         verbose_name="Пользователь"
     )
-    first_name: models.CharField = models.CharField(max_length=100, verbose_name="Имя")
-    last_name: models.CharField = models.CharField(max_length=100, verbose_name="Фамилия")
-    middle_name: models.CharField = models.CharField(max_length=100, blank=True, verbose_name="Отчество")
-    age: models.PositiveIntegerField = models.PositiveIntegerField(verbose_name="Возраст")
-    email_verified: models.BooleanField = models.BooleanField(default=False, verbose_name="Почта подтверждена")
-    verification_token: models.CharField = models.CharField(
+    first_name: CharField = CharField(
+        max_length=100,
+        verbose_name="Имя",
+        )
+    last_name: CharField = CharField(
+        max_length=100,
+        verbose_name="Фамилия",
+        )
+    middle_name: CharField = CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Отчество",
+        )
+    age: PositiveIntegerField = PositiveIntegerField(
+        verbose_name="Возраст")
+    email_verified: BooleanField = BooleanField(
+        default=False,
+        verbose_name="Почта подтверждена",
+        )
+    verification_token: CharField = CharField(
         max_length=100,
         blank=True,
         null=True,
-        verbose_name="Токен подтверждения"
+        verbose_name="Токен подтверждения",
     )
-    verification_sent_at: Optional[models.DateTimeField] = models.DateTimeField(
+    verification_sent_at: Optional[DateTimeField] = DateTimeField(
         null=True,
         blank=True,
         verbose_name="Дата отправки токена"

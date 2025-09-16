@@ -5,18 +5,14 @@ from typing import List, Dict, Any
 
 load_dotenv()
 
-# Основные настройки проекта
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
-"""Базовая директория проекта."""
 
 SECRET_KEY: str = os.getenv(
     'SECRET_KEY',
     'django-insecure--k#i2==p2rgsshf5$x0@2vm-legyxb+s6946jc4c+@z02u32q3'
 )
-"""Секретный ключ для криптографических операций Django."""
 
 DEBUG: bool = os.getenv('DEBUG', 'True') == 'True'
-"""Режим отладки (True для разработки, False для продакшена)."""
 
 ALLOWED_HOSTS: List[str] = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,web').split(',')
 
@@ -27,12 +23,13 @@ INSTALLED_APPS: List[str] = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
+    'rest_framework',  # Добавляем Django REST Framework
+    'rest_framework.authtoken',  # Добавляем токен-аутентификацию
     'django_redis',
     'django_celery_beat',
     'api.apps.ApiConfig',
 ]
-"""Список установленных приложений Django."""
+
 
 MIDDLEWARE: List[str] = [
     'django.middleware.security.SecurityMiddleware',
@@ -107,16 +104,16 @@ AUTH_PASSWORD_VALIDATORS: List[Dict[str, str]] = [
 ]
 """Валидаторы паролей для пользователей."""
 
-REST_FRAMEWORK: Dict[str, List[str]] = {
+REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',  # Добавьте это
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
 }
-"""Настройки Django REST Framework."""
 
 # Настройки кэширования с django-redis
 CACHES: Dict[str, Dict[str, Any]] = {

@@ -1,18 +1,20 @@
 .:
 api
 db.sqlite3
+Dockerfile
 manage.py
 order_service
 structure.txt
 
 ./api:
-admin.py
 apps.py
 __init__.py
 migrations
 models.py
 __pycache__
-tests.py
+serializers.py
+tasks.py
+urls.py
 views.py
 
 ./api/migrations:
@@ -27,6 +29,9 @@ admin.cpython-312.pyc
 apps.cpython-312.pyc
 __init__.cpython-312.pyc
 models.cpython-312.pyc
+serializers.cpython-312.pyc
+urls.cpython-312.pyc
+views.cpython-312.pyc
 
 ./order_service:
 asgi.py
