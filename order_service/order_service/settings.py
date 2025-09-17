@@ -5,33 +5,33 @@ from typing import List, Dict, Any
 
 load_dotenv()
 
-BASE_DIR: Path = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY: str = os.getenv(
+SECRET_KEY = os.getenv(
     'SECRET_KEY',
     'django-insecure--k#i2==p2rgsshf5$x0@2vm-legyxb+s6946jc4c+@z02u32q3'
 )
 
-DEBUG: bool = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS: List[str] = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,web').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,web').split(',')
 
-INSTALLED_APPS: List[str] = [
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',  # Добавляем Django REST Framework
-    'rest_framework.authtoken',  # Добавляем токен-аутентификацию
+    'rest_framework',
+    'rest_framework.authtoken',
     'django_redis',
     'django_celery_beat',
     'api.apps.ApiConfig',
+    'drf_spectacular',  # Документация
 ]
 
-
-MIDDLEWARE: List[str] = [
+MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -40,12 +40,10 @@ MIDDLEWARE: List[str] = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-"""Список middleware для обработки запросов."""
 
-ROOT_URLCONF: str = 'order_service.urls'
-"""Основной модуль маршрутов URL."""
+ROOT_URLCONF = 'order_service.urls'
 
-TEMPLATES: List[Dict[str, Any]] = [
+TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
@@ -61,21 +59,20 @@ TEMPLATES: List[Dict[str, Any]] = [
     },
 ]
 
-WSGI_APPLICATION: str = 'order_service.wsgi.application'
-"""Точка входа для WSGI-приложения."""
+WSGI_APPLICATION = 'order_service.wsgi.application'
 
-IS_LOCAL: bool = os.getenv('IS_LOCAL', 'True') == 'True'
-"""Флаг локальной разработки."""
+IS_LOCAL = os.getenv('IS_LOCAL', 'True') == 'True'
 
+# База данных
 if IS_LOCAL:
-    DATABASES: Dict[str, Dict[str, Any]] = {
+    DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 else:
-    DATABASES: Dict[str, Dict[str, Any]] = {
+    DATABASES = {
         'default': {
             'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
             'NAME': os.getenv('POSTGRES_DB', 'postgres'),
@@ -85,9 +82,8 @@ else:
             'PORT': os.getenv('DB_PORT', '5432'),
         }
     }
-"""Настройки базы данных (SQLite для локальной разработки, PostgreSQL для продакшена)."""
 
-AUTH_PASSWORD_VALIDATORS: List[Dict[str, str]] = [
+AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
@@ -101,21 +97,57 @@ AUTH_PASSWORD_VALIDATORS: List[Dict[str, str]] = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-"""Валидаторы паролей для пользователей."""
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',  # Добавьте это
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# Настройки кэширования с django-redis
-CACHES: Dict[str, Dict[str, Any]] = {
+# настройки для drf-spectacular
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Order Service API',
+    'DESCRIPTION': 'API для сервиса заказов товаров',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+    },
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    
+    # Настройки для аутентификации
+    'SECURITY': [
+        {
+            'TokenAuth': [],
+            'SessionAuth': [],
+        }
+    ],
+    'SECURITY_DEFINITIONS': {
+        'TokenAuth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Token-based authentication with format: Token <your_token>'
+        },
+        'SessionAuth': {
+            'type': 'apiKey',
+            'in': 'cookie',
+            'name': 'sessionid',
+            'description': 'Session-based authentication'
+        }
+    }
+}
+
+# Кэширование
+CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
@@ -125,44 +157,43 @@ CACHES: Dict[str, Dict[str, Any]] = {
     }
 }
 
-# Настройки отправки писем
-EMAIL_BACKEND: str = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST: str = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
-EMAIL_PORT: int = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS: bool = True
-EMAIL_HOST_USER: str = os.getenv('EMAIL_HOST_USER', 'your-email@gmail.com')
-EMAIL_HOST_PASSWORD: str = os.getenv('EMAIL_HOST_PASSWORD', 'your-email-password')
-DEFAULT_FROM_EMAIL: str = EMAIL_HOST_USER
-SITE_URL: str = os.getenv('SITE_URL', 'http://localhost:8000')
+# Настройки email - ВРЕМЕННО ОТКЛЮЧАЕМ ДЛЯ РАЗРАБОТКИ
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Вывод в консоль
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# Настройки Celery
-CELERY_BROKER_URL: str = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND: str = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
-CELERY_ACCEPT_CONTENT: List[str] = ['json']
-CELERY_TASK_SERIALIZER: str = 'json'
-CELERY_RESULT_SERIALIZER: str = 'json'
-CELERY_TIMEZONE: str = 'Europe/Moscow'
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
-# Настройки Celery Beat
-CELERY_BEAT_SCHEDULE: Dict[str, Dict[str, Any]] = {
+# Celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'
+
+# Celery Beat
+CELERY_BEAT_SCHEDULE = {
     'check-email-verification': {
         'task': 'api.tasks.check_email_verification',
-        'schedule': 3600.0,  # Каждые час
+        'schedule': 3600.0,
     },
 }
 
-LANGUAGE_CODE: str = 'ru-RU'
+LANGUAGE_CODE = 'ru-RU'
+TIME_ZONE = 'Europe/Moscow'
+USE_I18N = True
+USE_TZ = True
 
-TIME_ZONE: str = 'Europe/Moscow'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-USE_I18N: bool = True
-
-USE_TZ: bool = True
-
-STATIC_URL: str = 'static/'
-
-STATIC_ROOT: str = os.path.join(BASE_DIR, 'staticfiles')
-
-DEFAULT_AUTO_FIELD: str = 'django.db.models.BigAutoField'
-
-STATIC_ROOT: str = os.path.join(BASE_DIR, 'staticfiles')
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

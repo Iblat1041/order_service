@@ -191,7 +191,10 @@ class UserProfile(Model):
         verbose_name="Отчество",
         )
     age: PositiveIntegerField = PositiveIntegerField(
-        verbose_name="Возраст")
+        null=True,
+        blank=True,
+        verbose_name="Возраст",
+        )
     email_verified: BooleanField = BooleanField(
         default=False,
         verbose_name="Почта подтверждена",

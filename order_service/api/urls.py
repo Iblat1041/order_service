@@ -17,4 +17,3 @@ urlpatterns = [
     path('register/', register_user, name='register_user'),
     path('verify-email/<str:token>/', verify_email, name='verify_email'),
 ]
-"""Маршруты API для управления поставщиками, категориями, товарами, остатками и заказами."""
