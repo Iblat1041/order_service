@@ -5,7 +5,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import UserProfile
 from django.contrib.auth.models import User
-from typing import QuerySet
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ def check_email_verification() -> None:
         one_day_ago = timezone.now() - timedelta(days=1)
         two_days_ago = timezone.now() - timedelta(days=2)
 
-        one_day_unverified: QuerySet[UserProfile] = UserProfile.objects.filter(
+        one_day_unverified = UserProfile.objects.filter(
             email_verified=False,
             verification_sent_at__lte=one_day_ago,
             verification_sent_at__gt=two_days_ago
@@ -44,7 +43,7 @@ def check_email_verification() -> None:
                 fail_silently=True,
             )
 
-        two_days_unverified: QuerySet[UserProfile] = UserProfile.objects.filter(
+        two_days_unverified = UserProfile.objects.filter(
             email_verified=False,
             verification_sent_at__lte=two_days_ago
         )

@@ -13,20 +13,24 @@ from .serializers import (
 )
 from typing import Any
 
+
 class SupplierViewSet(viewsets.ModelViewSet):
     """ViewSet для управления поставщиками."""
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """ViewSet для управления категориями."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+
 class ProductViewSet(viewsets.ModelViewSet):
     """ViewSet для управления товарами."""
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
 
 class StockViewSet(viewsets.ModelViewSet):
     """ViewSet для управления остатками на складе."""
@@ -36,6 +40,7 @@ class StockViewSet(viewsets.ModelViewSet):
     @method_decorator(cache_page(60 * 5))  # Кэш на 5 минут
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     """ViewSet для управления заказами, доступными только авторизованным пользователям."""
@@ -62,6 +67,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         serializer.save(buyer=self.request.user)
 
+
 @api_view(['POST'])
 def register_user(request: Request) -> Response:
     """
@@ -81,6 +87,7 @@ def register_user(request: Request) -> Response:
             status=status.HTTP_201_CREATED
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def verify_email(request: Request, token: str) -> Response:
@@ -103,3 +110,4 @@ def verify_email(request: Request, token: str) -> Response:
         {'message': 'Электронная почта успешно подтверждена'},
         status=status.HTTP_200_OK
     )
+

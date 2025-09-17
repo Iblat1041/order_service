@@ -60,7 +60,6 @@ TEMPLATES: List[Dict[str, Any]] = [
         },
     },
 ]
-"""Настройки шаблонов Django."""
 
 WSGI_APPLICATION: str = 'order_service.wsgi.application'
 """Точка входа для WSGI-приложения."""
@@ -125,18 +124,16 @@ CACHES: Dict[str, Dict[str, Any]] = {
         }
     }
 }
-"""Настройки кэширования с использованием Redis."""
 
 # Настройки отправки писем
 EMAIL_BACKEND: str = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST: str = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_HOST: str = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
 EMAIL_PORT: int = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS: bool = True
 EMAIL_HOST_USER: str = os.getenv('EMAIL_HOST_USER', 'your-email@gmail.com')
 EMAIL_HOST_PASSWORD: str = os.getenv('EMAIL_HOST_PASSWORD', 'your-email-password')
 DEFAULT_FROM_EMAIL: str = EMAIL_HOST_USER
 SITE_URL: str = os.getenv('SITE_URL', 'http://localhost:8000')
-"""Настройки отправки электронной почты."""
 
 # Настройки Celery
 CELERY_BROKER_URL: str = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
@@ -145,7 +142,6 @@ CELERY_ACCEPT_CONTENT: List[str] = ['json']
 CELERY_TASK_SERIALIZER: str = 'json'
 CELERY_RESULT_SERIALIZER: str = 'json'
 CELERY_TIMEZONE: str = 'Europe/Moscow'
-"""Настройки брокера и backend для Celery."""
 
 # Настройки Celery Beat
 CELERY_BEAT_SCHEDULE: Dict[str, Dict[str, Any]] = {
@@ -154,22 +150,19 @@ CELERY_BEAT_SCHEDULE: Dict[str, Dict[str, Any]] = {
         'schedule': 3600.0,  # Каждые час
     },
 }
-"""Расписание задач для Celery Beat."""
 
 LANGUAGE_CODE: str = 'ru-RU'
-"""Код языка приложения."""
 
 TIME_ZONE: str = 'Europe/Moscow'
-"""Часовой пояс приложения."""
 
 USE_I18N: bool = True
-"""Использование интернационализации."""
 
 USE_TZ: bool = True
-"""Использование временных зон."""
 
 STATIC_URL: str = 'static/'
-"""URL для статических файлов."""
+
+STATIC_ROOT: str = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD: str = 'django.db.models.BigAutoField'
-"""Тип автоинкрементного поля по умолчанию."""
+
+STATIC_ROOT: str = os.path.join(BASE_DIR, 'staticfiles')
