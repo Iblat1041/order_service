@@ -6,6 +6,5 @@ from .models import UserProfile
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        # Временно закомментируйте эту строку
         # UserProfile.objects.create(user=instance)
         pass

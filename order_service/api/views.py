@@ -7,7 +7,7 @@ from .serializers import (
     SupplierSerializer, CategorySerializer, ProductSerializer,
     StockSerializer, OrderSerializer, UserProfileSerializer
 )
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 
@@ -53,7 +53,7 @@ from drf_spectacular.utils import (
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 @extend_schema_view(
     list=extend_schema(
@@ -68,6 +68,7 @@ class SupplierViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -103,11 +104,31 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     retrieve=extend_schema(
         summary="Детали товара",
         description="Получение детальной информации о товаре"
+    ),
+    create=extend_schema(
+        summary="Создать товар",
+        description="Создание нового товара (требуются права администратора)",
+        responses={
+            201: OpenApiResponse(response=ProductSerializer, description='Товар создан'),
+            400: OpenApiResponse(description='Неверные данные'),
+            403: OpenApiResponse(description='Нет прав')
+        }
+    ),
+    destroy=extend_schema(
+        summary="Удалить товар",
+        description="Удаление товара (требуются права администратора)",
+        responses={
+            204: OpenApiResponse(description='Товар удален'),
+            403: OpenApiResponse(description='Нет прав'),
+            404: OpenApiResponse(description='Товар не найден')
+        }
     )
 )
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().select_related('supplier', 'category')
     serializer_class = ProductSerializer
+    permission_classes = [AllowAny]
+
 
 @extend_schema_view(
     list=extend_schema(

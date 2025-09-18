@@ -10,6 +10,7 @@ from typing import Dict, Any
 
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -32,11 +33,13 @@ class SupplierSerializer(serializers.ModelSerializer):
         model = Supplier
         fields = ['id', 'name', 'country', 'city', 'street', 'building']
 
+
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для модели Category."""
     class Meta:
         model = Category
         fields = ['id', 'name', 'parent']
+
 
 @extend_schema_serializer(
     examples=[
@@ -58,17 +61,21 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'supplier', 'category', 'price']
 
+
 class StockSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Stock."""
     class Meta:
         model = Stock
         fields = ['id', 'product', 'quantity']
 
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     """Сериализатор для модели OrderItem."""
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'quantity', 'purchase_price']
+
 
 @extend_schema_serializer(
     examples=[
@@ -99,15 +106,6 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data: Dict[str, Any]) -> Order:
         """
         Создает заказ, обновляет остатки на складе и отправляет письмо покупателю.
-
-        Args:
-            validated_data: Валидированные данные для создания заказа.
-
-        Raises:
-            serializers.ValidationError: Если на складе недостаточно товара.
-
-        Returns:
-            Order: Созданный объект заказа.
         """
         items_data = validated_data.pop('items')
         order = Order.objects.create(**validated_data)
@@ -137,6 +135,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 print(f"Ошибка отправки email: {e}")
         
         return order
+
 
 @extend_schema_serializer(
     examples=[
