@@ -103,4 +103,4 @@ SECRET_KEY
 ├── README.md
 ├── requirements.txt
 ```
-
+Проект разработал Брежнев Иван (https://github.com/Iblat1041).
