@@ -62,7 +62,6 @@ WSGI_APPLICATION = 'order_service.wsgi.application'
 
 IS_LOCAL = os.getenv('IS_LOCAL', 'True') == 'True'
 
-# База данных
 if IS_LOCAL:
     DATABASES = {
         'default': {
