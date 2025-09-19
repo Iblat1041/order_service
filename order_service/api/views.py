@@ -1,20 +1,27 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from .models import Supplier, Category, Product, Stock, Order, OrderItem, UserProfile
-from .serializers import (
-    SupplierSerializer, CategorySerializer, ProductSerializer,
-    StockSerializer, OrderSerializer, UserProfileSerializer
-)
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
-from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
-
 from drf_spectacular.utils import (
-    extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample,
-    OpenApiResponse, OpenApiTypes
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+    OpenApiTypes,
 )
+
+from .models import Supplier, Category, Product, Stock, Order, UserProfile
+from .serializers import (
+    SupplierSerializer,
+    CategorySerializer,
+    ProductSerializer,
+    StockSerializer,
+    OrderSerializer,
+    UserProfileSerializer,
+)
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -54,6 +61,7 @@ class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
     permission_classes = [AllowAny]
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -107,9 +115,14 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     ),
     create=extend_schema(
         summary="Создать товар",
-        description="Создание нового товара (требуются права администратора)",
+        description=(
+            "Создание нового товара (требуются права администратора)"
+        ),
         responses={
-            201: OpenApiResponse(response=ProductSerializer, description='Товар создан'),
+            201: OpenApiResponse(
+                response=ProductSerializer,
+                description='Товар создан'
+            ),
             400: OpenApiResponse(description='Неверные данные'),
             403: OpenApiResponse(description='Нет прав')
         }
@@ -153,12 +166,19 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StockSerializer
     permission_classes = [IsAuthenticated]
 
+
 @extend_schema_view(
     create=extend_schema(
         summary="Создать заказ",
-        description="Создание нового заказа. Автоматически уменьшает остатки на складе.",
+        description=(
+            "Создание нового заказа. Автоматически уменьшает остатки "
+            "на складе."
+        ),
         responses={
-            201: OpenApiResponse(response=OrderSerializer, description='Заказ создан'),
+            201: OpenApiResponse(
+                response=OrderSerializer,
+                description='Заказ создан'
+            ),
             400: OpenApiResponse(description='Недостаточно товара на складе')
         }
     ),
@@ -188,7 +208,9 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.filter(buyer=self.request.user).prefetch_related('items__product')
+        return Order.objects.filter(buyer=self.request.user).prefetch_related(
+            'items__product'
+        )
 
     def perform_create(self, serializer):
         serializer.save(buyer=self.request.user)
@@ -197,45 +219,61 @@ class OrderViewSet(viewsets.ModelViewSet):
         summary="Повторить заказ",
         description="Создание нового заказа на основе существующего",
         responses={
-            201: OpenApiResponse(response=OrderSerializer, description='Заказ создан'),
+            201: OpenApiResponse(
+                response=OrderSerializer,
+                description='Заказ создан'
+            ),
             400: OpenApiResponse(description='Ошибка при создании заказа')
         }
     )
     @action(detail=True, methods=['post'])
     def reorder(self, request, pk=None):
         original_order = self.get_object()
-        
+
         # Создаем новый заказ с теми же товарами
         order_data = {
             'buyer': request.user.id,
             'items': []
         }
-        
+
         for item in original_order.items.all():
             order_data['items'].append({
                 'product': item.product.id,
                 'quantity': item.quantity,
                 'purchase_price': str(item.purchase_price)
             })
-        
+
         serializer = self.get_serializer(data=order_data)
         serializer.is_valid(raise_exception=True)
         new_order = serializer.save()
-        
-        return Response(OrderSerializer(new_order).data, status=status.HTTP_201_CREATED)
+
+        return Response(
+            OrderSerializer(new_order).data,
+            status=status.HTTP_201_CREATED
+        )
+
 
 @extend_schema(
     summary="Регистрация пользователя",
-    description="Создание нового пользователя и отправка письма для подтверждения email",
+    description=(
+        "Создание нового пользователя и отправка письма для "
+        "подтверждения email"
+    ),
     request=UserProfileSerializer,
     responses={
         201: OpenApiResponse(
-            description='Пользователь создан, отправлено письмо для подтверждения',
+            description=(
+                'Пользователь создан, отправлено письмо для '
+                'подтверждения'
+            ),
             examples=[
                 OpenApiExample(
                     'Успешная регистрация',
                     value={
-                        'message': 'Пользователь создан. Проверьте email для подтверждения.',
+                        'message': (
+                            'Пользователь создан. Проверьте email для '
+                            'подтверждения.'
+                        ),
                         'user_id': 1
                     }
                 )
@@ -263,12 +301,16 @@ def register_user(request):
         user_profile = serializer.save()
         return Response(
             {
-                'message': 'Пользователь создан. Проверьте email для подтверждения.',
+                'message': (
+                    'Пользователь создан. Проверьте email для '
+                    'подтверждения.'
+                ),
                 'user_id': user_profile.user.id
             },
             status=status.HTTP_201_CREATED
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @extend_schema(
     summary="Подтверждение email",
@@ -311,18 +353,23 @@ def register_user(request):
 @permission_classes([AllowAny])
 def verify_email(request, token):
     try:
-        user_profile = UserProfile.objects.get(verification_token=token, email_verified=False)
+        user_profile = UserProfile.objects.get(
+            verification_token=token,
+            email_verified=False
+        )
         user_profile.email_verified = True
         user_profile.verification_token = None
         user_profile.save()
-        
-        # Создаем токен аутентификации
-        token, created = Token.objects.get_or_create(user=user_profile.user)
-        
+
+        # Создаем или получаем токен аутентификации
+        token_obj, created = Token.objects.get_or_create(
+            user=user_profile.user
+        )
+
         return Response(
             {
                 'message': 'Email успешно подтвержден',
-                'token': token.key
+                'token': token_obj.key
             },
             status=status.HTTP_200_OK
         )
@@ -331,6 +378,7 @@ def verify_email(request, token):
             {'error': 'Неверный токен подтверждения'},
             status=status.HTTP_404_NOT_FOUND
         )
+
 
 @extend_schema(
     summary="Информация о текущем пользователе",
@@ -359,7 +407,7 @@ def verify_email(request, token):
 def current_user_info(request):
     user = request.user
     profile = user.profile
-    
+
     return Response({
         'username': user.username,
         'email': user.email,

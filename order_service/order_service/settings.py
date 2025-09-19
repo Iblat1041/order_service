@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from typing import List, Dict, Any
 
 load_dotenv()
 
@@ -28,7 +27,7 @@ INSTALLED_APPS = [
     'django_redis',
     'django_celery_beat',
     'api.apps.ApiConfig',
-    'drf_spectacular',  # Документация
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [

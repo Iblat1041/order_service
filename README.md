@@ -54,7 +54,12 @@ API обеспечивает безопасное взаимодействие �
 
 ## Установка с Docker
 
-1.  Создайте файл `.env` (как указано выше, но с `DB_HOST=db` и `IS_LOCAL=False`).
+1.  Создайте файл `.env`.
+```bash
+Добавьте настройки superuser
+Настройки Email
+SECRET_KEY
+```
 
 2.  Запустите Docker Compose:
     ```bash
@@ -99,138 +104,3 @@ API обеспечивает безопасное взаимодействие �
 ├── requirements.txt
 ```
 
-
-### Основные эндпоинты
-
-*   **Регистрация:** `/api/register/`
-```bash
-POST http://localhost:8000/api/register/
-{
-    "username": "testuser",
-    "email": "testuser@example.com",
-    "password": "securepassword123",
-    "first_name": "Иван",
-    "last_name": "Иванов",
-    "middle_name": "Иванович",
-    "age": 30
-}
-```
-*   **Подтверждение email:** `/api/verify-email/<token>/`
-```bash
-GET http://localhost:8000/api/verify-email/ваш_токен_подтверждения/
-```
-
-*   **Получение токена(Авторизация)**
-```bash
-POST http://localhost:8000/api/auth/token/
-{
-    "username": "testuser",
-    "password": "SecurePass123!"
-}
-```
-
-*   **Поставщики:** `/api/suppliers/`
-```bash
-GET http://localhost:8000/api/suppliers/
-Headers: Authorization: Token ваш_токен
-
-Создать поставщика:
-POST http://localhost:8000/api/suppliers/
-Headers: Authorization: Token ваш_токен
-
-Обновить поставщика:
-PUT http://localhost:8000/api/suppliers/1/
-Headers: Authorization: Token ваш_токен
-{
-    "name": "ООО Рога и копыта",
-    "country": "Россия",
-    "city": "Москва",
-    "street": "Ленина",
-    "building": "15а"
-}
-```
-
-*   **Категории:** `/api/categories/`
-```bash
-Получить все категории:
-GET http://localhost:8000/api/categories/
-Headers: Authorization: Token ваш_токен
-
-Создать категорию:
-POST http://localhost:8000/api/categories/
-Headers: Authorization: Token ваш_токен
-
-{
-    "name": "Электроника",
-    "parent": null
-}
-
-Создать подкатегорию:
-POST http://localhost:8000/api/categories/
-Headers: Authorization: Token ваш_токен
-
-{
-    "name": "Ноутбуки",
-    "parent": 1
-}
-```
-
-*   **Товары:** `/api/products/`
-    *   Полный набор CRUD-операций для товаров
-```bash
-Получить все товары:
-GET http://localhost:8000/api/products/
-Headers: Authorization: Token ваш_токен
-
-Создать товар:
-POST http://localhost:8000/api/products/
-Headers: Authorization: Token ваш_токен
-{
-    "name": "Ноутбук HP Pavilion",
-    "supplier": 1,
-    "category": 2,
-    "price": "55000.00"
-}
-```
-
-*   **Остатки:** `/api/stocks/`
-```bash
-GET http://localhost:8000/api/stocks/
-Headers: Authorization: Token ваш_токен
-
-Добавить остаток:
-POST http://localhost:8000/api/stocks/
-Headers: Authorization: Token ваш_токен
-
-Обновить остаток:
-PUT http://localhost:8000/api/stocks/1/
-Headers: Authorization: Token ваш_токен
-{
-    "product": 1,
-    "quantity": 30
-}
-```
-
-*   **Заказы:** `/api/orders/`
-```bash
-GET http://localhost:8000/api/orders/
-Headers: Authorization: Token ваш_токен
-
-Создать заказ:
-POST http://localhost:8000/api/orders/
-Headers: Authorization: Token ваш_токен
-{
-    "items": [
-        {
-            "product": 1,
-            "quantity": 2,
-            "purchase_price": "52000.00"
-        },
-        {
-            "product": 2,
-            "quantity": 1,
-            "purchase_price": "25000.00"
-        }
-    ]
-}
-```

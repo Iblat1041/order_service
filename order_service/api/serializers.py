@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Supplier, Category, Product, Stock, Order, OrderItem, UserProfile
 from rest_framework.validators import UniqueValidator
 from django.core.mail import send_mail
 from django.conf import settings
@@ -9,6 +8,16 @@ import uuid
 from typing import Dict, Any
 
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
+
+from .models import (
+    Supplier,
+    Category,
+    Product,
+    Stock,
+    Order,
+    OrderItem,
+    UserProfile,
+)
 
 
 @extend_schema_serializer(
@@ -69,7 +78,6 @@ class StockSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'quantity']
 
 
-
 class OrderItemSerializer(serializers.ModelSerializer):
     """Сериализатор для модели OrderItem."""
     class Meta:
@@ -109,17 +117,18 @@ class OrderSerializer(serializers.ModelSerializer):
         """
         items_data = validated_data.pop('items')
         order = Order.objects.create(**validated_data)
-        
+
         for item_data in items_data:
             stock = Stock.objects.get(product=item_data['product'])
             if stock.quantity < item_data['quantity']:
                 raise serializers.ValidationError(
-                    f"Недостаточно товара {item_data['product'].name} на складе"
+                    f"Недостаточно товара {item_data['product'].name} "
+                    f"на складе"
                 )
             OrderItem.objects.create(order=order, **item_data)
             stock.quantity -= item_data['quantity']
             stock.save()
-        
+
         # Отправка email только если настроен email бэкенд
         if not settings.DEBUG or hasattr(settings, 'EMAIL_BACKEND'):
             try:
@@ -131,9 +140,8 @@ class OrderSerializer(serializers.ModelSerializer):
                     fail_silently=True,
                 )
             except Exception as e:
-                # Логируем ошибку, но не прерываем выполнение
                 print(f"Ошибка отправки email: {e}")
-        
+
         return order
 
 
@@ -174,7 +182,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name', 'middle_name', 'age', 'email', 'username', 'password']
+        fields = [
+            'first_name',
+            'last_name',
+            'middle_name',
+            'age',
+            'email',
+            'username',
+            'password'
+        ]
 
     def create(self, validated_data: Dict[str, Any]) -> UserProfile:
         """
@@ -192,14 +208,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'password': validated_data.pop('password')
         }
         user = User.objects.create_user(**user_data)
-        
+
         user_profile = UserProfile.objects.create(
             user=user,
             **validated_data,
             verification_token=str(uuid.uuid4()),
             verification_sent_at=timezone.now()
         )
-        
+
         # Отправка email только если настроен email бэкенд
         if not settings.DEBUG or hasattr(settings, 'EMAIL_BACKEND'):
             try:
@@ -207,14 +223,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
                     subject='Подтверждение электронной почты',
                     message=(
                         f'Перейдите по ссылке для подтверждения: '
-                        f'{settings.SITE_URL}/api/verify-email/{user_profile.verification_token}/'
+                        f'{settings.SITE_URL}/api/verify-email/'
+                        f'{user_profile.verification_token}/'
                     ),
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[user.email],
                     fail_silently=True,
                 )
             except Exception as e:
-                # Логируем ошибку, но не прерываем выполнение
                 print(f"Ошибка отправки email: {e}")
-        
+
         return user_profile

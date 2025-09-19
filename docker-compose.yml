@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   web:
     build: .
@@ -11,6 +13,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py createsuperuser --noinput --username $$DJANGO_SUPERUSER_USERNAME --email $$DJANGO_SUPERUSER_EMAIL 2>/dev/null || true &&
+             python manage.py runserver 0.0.0.0:8000"
 
   db:
     image: postgres:13
@@ -27,7 +34,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: redis_prod
+    container_name: redis
     volumes:
       - redis_data:/data
     healthcheck:
@@ -35,6 +42,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  celery:
+    build: .
+    container_name: celery
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A order_service worker -l info
+
+  celery_beat:
+    build: .
+    container_name: celery_beat
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A order_service beat -l info
 
 volumes:
   postgres_data:
