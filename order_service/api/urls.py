@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
 from .views import (
     SupplierViewSet, CategoryViewSet, ProductViewSet,
     StockViewSet, OrderViewSet, register_user, verify_email
@@ -16,5 +17,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('register/', register_user, name='register_user'),
     path('verify-email/<str:token>/', verify_email, name='verify_email'),
+    path('auth/token/', obtain_auth_token, name='api_token_auth'),
 ]
-"""Маршруты API для управления поставщиками, категориями, товарами, остатками и заказами."""

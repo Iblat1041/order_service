@@ -1,45 +1,22 @@
-# Сервис заказов со склада
+# REST API для управления складом и заказами
 
-REST API для управления поставщиками, товарами, остатками на складе, заказами и профилями покупателей. Проект построен на Django и Django REST Framework (DRF) и включает функциональность для регистрации пользователей с подтверждением email, управления заказами с проверкой остатков и автоматической отправкой писем.
+Проект представляет собой RESTful API для комплексного управления складской логистикой и заказами. Решение построено на Django и Django REST Framework и предоставляет полный цикл работы с товарами: от управления поставщиками и контроля остатков на складе до обработки заказов покупателей.
 
-## Основные функции
+Ключевые особенности включают систему регистрации пользователей с подтверждением email, интеллектуальное управление заказами с автоматической проверкой наличия товаров, иерархическую организацию товарных категорий, а также автоматизированную отправку email-уведомлений.
 
-### Управление поставщиками
-*   Создание, обновление и удаление поставщиков (с каскадным удалением связанных данных).
+API обеспечивает безопасное взаимодействие через token-аутентификацию и предлагает полную документацию в формате OpenAPI 3.0 с интерактивным интерфейсом Swagger UI для удобного тестирования и интеграции.
 
-### Управление складом
-*   Просмотр остатков товаров (с кэшированием через Redis).
-*   Добавление товаров и управление их остатками.
-*   Обновление и удаление товаров.
+## Стек технологии
 
-### Управление заказами
-*   Создание заказов с проверкой наличия товаров на складе.
-*   Отправка письма с подтверждением заказа на email покупателя.
+*   **Backend:**   Django 4.2.5, Django REST Framework 3.14.0
+*   **База данных:**   PostgreSQL (SQLite для локальной разработки)
+*   **Кэширование:**   Redis
+*   **Фоновые задачи:**   Celery 5.3.4, Celery Beat 2.5.0
+*   **Документация API:**   DRF Spectacular (OpenAPI 3.0)
+*   **Контейнеризация:**   Docker, Docker Compose
+*   **Дополнительно:**   python-dotenv для управления переменными окружения
 
-### Управление пользователями и email
-*   Регистрация покупателей с автоматическим созданием профиля.
-*   Подтверждение email через токен.
-*   Отправка напоминаний через 1 день и деактивация аккаунта через 2 дня, если email не подтвержден.
-
-## Используемые технологии
-
-*   **Backend:** Django 4.2.7, Django REST Framework 3.14.0
-*   **База данных:** PostgreSQL 13 (SQLite для локальной разработки)
-*   **Кэширование:** Redis 6
-*   **Фоновые задачи:** Celery 5.3.6, Celery Beat 2.5.0
-*   **Контейнеризация:** Docker, Docker Compose
-*   **Дополнительно:** python-dotenv для управления переменными окружения
-
-## Установка и запуск
-
-### Требования
-
-*   Python 3.12
-*   Docker и Docker Compose (для контейнеризации)
-*   SMTP-сервер (например, Gmail) для отправки писем
-*   PostgreSQL и Redis (для продакшена)
-
-### Установка локально
+## Установка локально
 
 1.  Клонируйте репозиторий:
     ```bash
@@ -47,26 +24,7 @@ REST API для управления поставщиками, товарами,
     cd order-service
     ```
 
-2.  Создайте файл `.env` в корне проекта (пример):
-    ```ini
-    SECRET_KEY=your-secret-key
-    DEBUG=True
-    ALLOWED_HOSTS=localhost,127.0.0.1
-    DB_ENGINE=django.db.backends.postgresql
-    POSTGRES_DB=postgres
-    POSTGRES_USER=postgres
-    POSTGRES_PASSWORD=postgres
-    DB_HOST=localhost
-    DB_PORT=5432
-    CELERY_BROKER_URL=redis://localhost:6379/0
-    CELERY_RESULT_BACKEND=redis://localhost:6379/0
-    REDIS_URL=redis://localhost:6379/1
-    EMAIL_HOST=smtp.gmail.com
-    EMAIL_PORT=587
-    EMAIL_HOST_USER=your-email@gmail.com
-    EMAIL_HOST_PASSWORD=your-app-password
-    SITE_URL=http://localhost:8000
-    ```
+2.  Создайте файл `.env` в корне проекта. Образец env.example:
 
 3.  Установите зависимости:
     ```bash
@@ -94,94 +52,55 @@ REST API для управления поставщиками, товарами,
 6.  **Доступ к API:**
     API доступно по адресу: http://localhost:8000/api/
 
-### Установка с Docker
+## Установка с Docker
 
-1.  Создайте файл `.env` (как указано выше, но с `DB_HOST=db` и `IS_LOCAL=False`).
+1.  Создайте файл `.env`.
+```bash
+Добавьте настройки superuser
+Настройки Email
+SECRET_KEY
+```
 
 2.  Запустите Docker Compose:
     ```bash
     docker-compose up --build
     ```
 
-3.  **Доступ к API:**
-    *   API: http://localhost:8000/api/
-    *   Swagger-документация (если добавлена): http://localhost:8000/swagger/
+## Документация API
+*   **Swagger UI : http://localhost:8000/api/schema/swagger-ui/**
+
+*   **ReDoc : http://localhost:8000/api/schema/redoc/**
 
 ## Структура проекта
 ```bash
-order-service/
-├── api/
-│   ├── __init__.py
-│   ├── apps.py        # Конфигурация приложения и регистрация сигналов
-│   ├── migrations/    # Миграции базы данных
-│   ├── models.py      # Модели (Supplier, Category, Product, Stock, Order, OrderItem, UserProfile)
-│   ├── serializers.py # Сериализаторы для API
-│   ├── signals.py     # Сигналы (например, создание UserProfile)
-│   ├── tasks.py       # Фоновые задачи Celery (проверка email)
-│   ├── tests.py       # Тесты (опционально)
-│   ├── urls.py        # Маршруты API
-│   ├── views.py       # Представления API
-├── order_service/
-│   ├── __init__.py
-│   ├── asgi.py
-│   ├── settings.py    # Настройки проекта
-│   ├── urls.py        # Основные маршруты
-│   ├── wsgi.py
-├── .env               # Переменные окружения
-├── Dockerfile         # Конфигурация Docker
-├── docker-compose.yml # Конфигурация Docker Compose
-├── manage.py          # Управление Django
-├── requirements.txt   # Зависимости
+.
+├── celerybeat-schedule
+├── docker-compose.yml
+├── Dockerfile
+├── order_service
+│   ├── api
+│   │   ├── apps.py
+│   │   ├── __init__.py
+│   │   ├── migrations
+│   │   ├── models.py
+│   │   ├── __pycache__
+│   │   ├── serializers.py
+│   │   ├── signals.py
+│   │   ├── tasks.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── db.sqlite3
+│   ├── manage.py
+│   ├── order_service
+│   │   ├── asgi.py
+│   │   ├── celery.py
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   └── wsgi.py
+│   └── structure.txt
+├── README.md
+├── requirements.txt
 ```
 
-
-## Использование API
-
-### Основные эндпоинты
-
-*   **Поставщики:** `/api/suppliers/`
-    *   `GET`: Получение списка поставщиков
-    *   `POST`: Создание нового поставщика
-    *   `PUT/PATCH`: Обновление существующего поставщика
-    *   `DELETE`: Удаление поставщика (с каскадным удалением товаров и остатков)
-
-*   **Категории:** `/api/categories/`
-    *   `GET`: Получение списка категорий
-    *   `POST`: Создание категории (с поддержкой вложенных категорий)
-    *   `PUT/PATCH`: Обновление категории
-    *   `DELETE`: Удаление категории
-
-*   **Товары:** `/api/products/`
-    *   Полный набор CRUD-операций для товаров
-
-*   **Остатки:** `/api/stocks/`
-    *   `GET`: Получение списка остатков (с кэшированием в Redis)
-    *   `POST`: Добавление остатков
-    *   `PUT/PATCH`: Обновление остатков
-    *   `DELETE`: Удаление остатков
-
-*   **Заказы:** `/api/orders/`
-    *   `GET`: Получение списка заказов (только для авторизованного пользователя)
-    *   `POST`: Создание заказа (проверяет остатки, отправляет email)
-    *   *Требуется аутентификация:* `Authorization: Token <token>`
-
-*   **Регистрация:** `/api/register/`
-    *   `POST`: Регистрация пользователя (создает User и UserProfile, отправляет письмо с токеном верификации)
-
-*   **Подтверждение email:** `/api/verify-email/<token>/`
-    *   `GET`: Подтверждение email по токену
-
-### Пример запроса (регистрация)
-
-```bash
-curl -X POST http://localhost:8000/api/register/ \
--H "Content-Type: application/json" \
--d '{
-    "username": "testuser",
-    "email": "testuser@example.com",
-    "password": "securepassword123",
-    "first_name": "Иван",
-    "last_name": "Иванов",
-    "middle_name": "Иванович",
-    "age": 30
-}'
