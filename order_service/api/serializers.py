@@ -1,23 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
-from django.core.mail import send_mail
-from django.conf import settings
 from django.utils import timezone
-import uuid
-from typing import Dict, Any
-
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
-
-from .models import (
-    Supplier,
-    Category,
-    Product,
-    Stock,
-    Order,
-    OrderItem,
-    UserProfile,
-)
+from .models import Supplier, Category, Product, Stock, Order, OrderItem, UserProfile
+from .services import OrderService, UserProfileService
 
 
 @extend_schema_serializer(
@@ -32,22 +19,83 @@ from .models import (
                 'building': '10'
             },
             request_only=True,
-            response_only=False,
         )
     ]
 )
-class SupplierSerializer(serializers.ModelSerializer):
+class SupplierSerializer(serializers.Serializer):
     """Сериализатор для модели Supplier."""
-    class Meta:
-        model = Supplier
-        fields = ['id', 'name', 'country', 'city', 'street', 'building']
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=255)
+    country = serializers.CharField(max_length=100)
+    city = serializers.CharField(max_length=100)
+    street = serializers.CharField(max_length=100)
+    building = serializers.CharField(max_length=50)
+
+    def create(self, validated_data):
+        """Создаёт новый объект Supplier.
+
+        Args:
+            validated_data (dict): Валидированные данные для создания поставщика.
+
+        Returns:
+            Supplier: Созданный объект поставщика.
+        """
+        return Supplier.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Обновляет существующий объект Supplier.
+
+        Args:
+            instance (Supplier): Объект поставщика для обновления.
+            validated_data (dict): Валидированные данные для обновления.
+
+        Returns:
+            Supplier: Обновлённый объект поставщика.
+        """
+        instance.name = validated_data.get('name', instance.name)
+        instance.country = validated_data.get('country', instance.country)
+        instance.city = validated_data.get('city', instance.city)
+        instance.street = validated_data.get('street', instance.street)
+        instance.building = validated_data.get('building', instance.building)
+        instance.save()
+        return instance
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.Serializer):
     """Сериализатор для модели Category."""
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'parent']
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=100)
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        allow_null=True,
+        required=False
+    )
+
+    def create(self, validated_data):
+        """Создаёт новый объект Category.
+
+        Args:
+            validated_data (dict): Валидированные данные для создания категории.
+
+        Returns:
+            Category: Созданный объект категории.
+        """
+        return Category.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Обновляет существующий объект Category.
+
+        Args:
+            instance (Category): Объект категории для обновления.
+            validated_data (dict): Валидированные данные для обновления.
+
+        Returns:
+            Category: Обновлённый объект категории.
+        """
+        instance.name = validated_data.get('name', instance.name)
+        instance.parent = validated_data.get('parent', instance.parent)
+        instance.save()
+        return instance
 
 
 @extend_schema_serializer(
@@ -64,25 +112,109 @@ class CategorySerializer(serializers.ModelSerializer):
         )
     ]
 )
-class ProductSerializer(serializers.ModelSerializer):
+class ProductSerializer(serializers.Serializer):
     """Сериализатор для модели Product."""
-    class Meta:
-        model = Product
-        fields = ['id', 'name', 'supplier', 'category', 'price']
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=255)
+    supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    def create(self, validated_data):
+        """Создаёт новый объект Product.
+
+        Args:
+            validated_data (dict): Валидированные данные для создания продукта.
+
+        Returns:
+            Product: Созданный объект продукта.
+        """
+        return Product.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Обновляет существующий объект Product.
+
+        Args:
+            instance (Product): Объект продукта для обновления.
+            validated_data (dict): Валидированные данные для обновления.
+
+        Returns:
+            Product: Обновлённый объект продукта.
+        """
+        instance.name = validated_data.get('name', instance.name)
+        instance.supplier = validated_data.get('supplier', instance.supplier)
+        instance.category = validated_data.get('category', instance.category)
+        instance.price = validated_data.get('price', instance.price)
+        instance.save()
+        return instance
 
 
-class StockSerializer(serializers.ModelSerializer):
+class StockSerializer(serializers.Serializer):
     """Сериализатор для модели Stock."""
-    class Meta:
-        model = Stock
-        fields = ['id', 'product', 'quantity']
+    id = serializers.IntegerField(read_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    quantity = serializers.IntegerField(min_value=0)
+
+    def create(self, validated_data):
+        """Создаёт новый объект Stock.
+
+        Args:
+            validated_data (dict): Валидированные данные для создания остатка.
+
+        Returns:
+            Stock: Созданный объект остатка.
+        """
+        return Stock.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Обновляет существующий объект Stock.
+
+        Args:
+            instance (Stock): Объект остатка для обновления.
+            validated_data (dict): Валидированные данные для обновления.
+
+        Returns:
+            Stock: Обновлённый объект остатка.
+        """
+        instance.product = validated_data.get('product', instance.product)
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.save()
+        return instance
 
 
-class OrderItemSerializer(serializers.ModelSerializer):
+class OrderItemSerializer(serializers.Serializer):
     """Сериализатор для модели OrderItem."""
-    class Meta:
-        model = OrderItem
-        fields = ['id', 'product', 'quantity', 'purchase_price']
+    id = serializers.IntegerField(read_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    quantity = serializers.IntegerField(min_value=1)
+    purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    def create(self, validated_data):
+        """Создаёт новый объект OrderItem.
+
+        Args:
+            validated_data (dict): Валидированные данные для создания элемента заказа.
+
+        Returns:
+            OrderItem: Созданный объект элемента заказа.
+        """
+        return OrderItem.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Обновляет существующий объект OrderItem.
+
+        Args:
+            instance (OrderItem): Объект элемента заказа для обновления.
+            validated_data (dict): Валидированные данные для обновления.
+
+        Returns:
+            OrderItem: Обновлённый объект элемента заказа.
+        """
+        instance.product = validated_data.get('product', instance.product)
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.purchase_price = validated_data.get('purchase_price', instance.purchase_price)
+        instance.save()
+        return instance
 
 
 @extend_schema_serializer(
@@ -103,46 +235,35 @@ class OrderItemSerializer(serializers.ModelSerializer):
         )
     ]
 )
-class OrderSerializer(serializers.ModelSerializer):
+class OrderSerializer(serializers.Serializer):
     """Сериализатор для модели Order, включающий элементы заказа."""
+    id = serializers.IntegerField(read_only=True)
+    order_date = serializers.DateTimeField(default=timezone.now)
+    buyer = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     items = OrderItemSerializer(many=True)
 
-    class Meta:
-        model = Order
-        fields = ['id', 'order_date', 'buyer', 'items']
+    def create(self, validated_data):
+        """Создаёт новый заказ, используя OrderService.
 
-    def create(self, validated_data: Dict[str, Any]) -> Order:
+        Args:
+            validated_data (dict): Валидированные данные для создания заказа.
+
+        Returns:
+            Order: Созданный объект заказа.
         """
-        Создает заказ, обновляет остатки на складе и отправляет письмо покупателю.
+        return OrderService.create_order(validated_data)
+
+    def update(self, instance, validated_data):
+        """Обновляет существующий заказ, используя OrderService.
+
+        Args:
+            instance (Order): Объект заказа для обновления.
+            validated_data (dict): Валидированные данные для обновления.
+
+        Returns:
+            Order: Обновлённый объект заказа.
         """
-        items_data = validated_data.pop('items')
-        order = Order.objects.create(**validated_data)
-
-        for item_data in items_data:
-            stock = Stock.objects.get(product=item_data['product'])
-            if stock.quantity < item_data['quantity']:
-                raise serializers.ValidationError(
-                    f"Недостаточно товара {item_data['product'].name} "
-                    f"на складе"
-                )
-            OrderItem.objects.create(order=order, **item_data)
-            stock.quantity -= item_data['quantity']
-            stock.save()
-
-        # Отправка email только если настроен email бэкенд
-        if not settings.DEBUG or hasattr(settings, 'EMAIL_BACKEND'):
-            try:
-                send_mail(
-                    subject='Подтверждение заказа',
-                    message=f'Ваш заказ {order.id} успешно создан.',
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[order.buyer.email],
-                    fail_silently=True,
-                )
-            except Exception as e:
-                print(f"Ошибка отправки email: {e}")
-
-        return order
+        return OrderService.update_order(instance, validated_data)
 
 
 @extend_schema_serializer(
@@ -162,8 +283,12 @@ class OrderSerializer(serializers.ModelSerializer):
         )
     ]
 )
-class UserProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.Serializer):
     """Сериализатор для модели UserProfile, включающий регистрацию пользователя."""
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    middle_name = serializers.CharField(max_length=100, allow_blank=True)
+    age = serializers.IntegerField(min_value=0, allow_null=True, required=False)
     email = serializers.EmailField(
         write_only=True,
         validators=[UniqueValidator(queryset=User.objects.all())],
@@ -177,60 +302,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         style={'input_type': 'password'},
-        label="Пароль"
+        label="Пароль",
+        required=False
     )
 
-    class Meta:
-        model = UserProfile
-        fields = [
-            'first_name',
-            'last_name',
-            'middle_name',
-            'age',
-            'email',
-            'username',
-            'password'
-        ]
-
-    def create(self, validated_data: Dict[str, Any]) -> UserProfile:
-        """
-        Создает профиль пользователя и отправляет письмо для подтверждения почты.
+    def create(self, validated_data):
+        """Создаёт новый профиль пользователя, используя UserProfileService.
 
         Args:
-            validated_data: Валидированные данные для создания пользователя.
+            validated_data (dict): Валидированные данные для создания профиля.
 
         Returns:
-            UserProfile: Созданный профиль пользователя.
+            UserProfile: Созданный объект профиля пользователя.
         """
-        user_data = {
-            'username': validated_data.pop('username'),
-            'email': validated_data.pop('email'),
-            'password': validated_data.pop('password')
-        }
-        user = User.objects.create_user(**user_data)
+        return UserProfileService.create_user_profile(validated_data)
 
-        user_profile = UserProfile.objects.create(
-            user=user,
-            **validated_data,
-            verification_token=str(uuid.uuid4()),
-            verification_sent_at=timezone.now()
-        )
+    def update(self, instance, validated_data):
+        """Обновляет существующий профиль пользователя, используя UserProfileService.
 
-        # Отправка email только если настроен email бэкенд
-        if not settings.DEBUG or hasattr(settings, 'EMAIL_BACKEND'):
-            try:
-                send_mail(
-                    subject='Подтверждение электронной почты',
-                    message=(
-                        f'Перейдите по ссылке для подтверждения: '
-                        f'{settings.SITE_URL}/api/verify-email/'
-                        f'{user_profile.verification_token}/'
-                    ),
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
-            except Exception as e:
-                print(f"Ошибка отправки email: {e}")
+        Args:
+            instance (UserProfile): Объект профиля пользователя для обновления.
+            validated_data (dict): Валидированные данные для обновления.
 
-        return user_profile
+        Returns:
+            UserProfile: Обновлённый объект профиля пользователя.
+        """
+        return UserProfileService.update_user_profile(instance, validated_data)

@@ -1,0 +1,33 @@
+.
+├── docker-compose.yml
+├── Dockerfile
+├── env.example
+├── logs
+│   └── order_service.log
+├── order_service
+│   ├── api
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── __init__.py
+│   │   ├── migrations
+│   │   ├── models.py
+│   │   ├── repositories.py
+│   │   ├── serializers.py
+│   │   ├── services.py
+│   │   ├── tasks.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── manage.py
+│   └── order_service
+│       ├── asgi.py
+│       ├── celery.py
+│       ├── __init__.py
+│       ├── logging_config.py
+│       ├── settings.py
+│       ├── urls.py
+│       └── wsgi.py
+├── README.md
+├── requirements.txt
+└── Structure.txt
+
+6 directories, 25 files

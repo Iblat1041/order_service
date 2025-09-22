@@ -74,33 +74,35 @@ SECRET_KEY
 ## Структура проекта
 ```bash
 .
-├── celerybeat-schedule
 ├── docker-compose.yml
 ├── Dockerfile
+├── env.example
+├── logs
+│   └── order_service.log
 ├── order_service
-│   ├── api
-│   │   ├── apps.py
-│   │   ├── __init__.py
-│   │   ├── migrations
-│   │   ├── models.py
-│   │   ├── __pycache__
-│   │   ├── serializers.py
-│   │   ├── signals.py
-│   │   ├── tasks.py
-│   │   ├── urls.py
-│   │   └── views.py
-│   ├── db.sqlite3
-│   ├── manage.py
-│   ├── order_service
-│   │   ├── asgi.py
-│   │   ├── celery.py
-│   │   ├── __init__.py
-│   │   ├── __pycache__
-│   │   ├── settings.py
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   └── structure.txt
+│   ├── api
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── __init__.py
+│   │   ├── migrations
+│   │   ├── models.py
+│   │   ├── repositories.py
+│   │   ├── serializers.py
+│   │   ├── services.py
+│   │   ├── tasks.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── manage.py
+│   └── order_service
+│       ├── asgi.py
+│       ├── celery.py
+│       ├── __init__.py
+│       ├── logging_config.py
+│       ├── settings.py
+│       ├── urls.py
+│       └── wsgi.py
 ├── README.md
 ├── requirements.txt
+└── Structure.txt
 ```
 Проект разработал Брежнев Иван (https://github.com/Iblat1041).
