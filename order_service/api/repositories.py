@@ -1,54 +1,48 @@
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Product, Stock, Order, OrderItem, UserProfile, User
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProductRepository:
     """Репозиторий для работы с моделями Product и Stock в базе данных."""
 
     @staticmethod
-    def get_product_by_id(product_id):
-        """Получает продукт по его идентификатору.
-
-        Args:
-            product_id (int): Идентификатор продукта.
-
-        Returns:
-            Product: Объект модели Product.
-
-        Raises:
-            ObjectDoesNotExist: Если продукт с указанным ID не найден.
-        """
-        return Product.objects.get(id=product_id)
-
-    @staticmethod
     def get_stock_by_product(product):
-        """Получает складской остаток для указанного продукта.
+        """Получает остаток товара с блокировкой строки (select_for_update) для предотвращения гонок.
 
         Args:
-            product (Product): Объект модели Product.
+            product (Product): Объект товара для поиска остатка.
 
         Returns:
-            Stock: Объект модели Stock, связанный с продуктом.
+            Stock: Объект остатка товара.
 
         Raises:
-            ObjectDoesNotExist: Если запись о складе для продукта не найдена.
+            ObjectDoesNotExist: Если остаток для товара не найден.
         """
-        return Stock.objects.get(product=product)
+        try:
+            stock = Stock.objects.select_for_update().get(product=product)
+            return stock
+        except ObjectDoesNotExist:
+            logger.error(f"Остаток для товара {product.name} не найден")
+            raise ObjectDoesNotExist(f"Остаток для товара {product.name} не найден")
 
     @staticmethod
     def update_stock(stock, quantity):
-        """Обновляет количество товара на складе, уменьшая его на указанное значение.
+        """Обновляет количество товара на складе.
 
         Args:
-            stock (Stock): Объект модели Stock.
-            quantity (int): Количество, на которое нужно уменьшить остаток.
+            stock (Stock): Объект остатка для обновления.
+            quantity (int): Количество для вычитания из остатка.
 
-        Returns:
-            Stock: Обновлённый объект модели Stock.
+        Raises:
+            ValueError: Если количество отрицательное.
         """
+        if quantity < 0:
+            raise ValueError("Количество не может быть отрицательным")
         stock.quantity -= quantity
         stock.save()
-        return stock
 
 
 class OrderRepository:

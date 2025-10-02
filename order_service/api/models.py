@@ -128,6 +128,10 @@ class Order(Model):
         default=timezone.now,
         verbose_name="Дата заказа",
         )
+    email_sent = BooleanField(
+        default=False,
+        db_index=True,
+        )
 
     def __str__(self) -> str:
         """Возвращает строковое представление заказа."""

@@ -303,7 +303,9 @@ class UserProfileSerializer(serializers.Serializer):
         write_only=True,
         style={'input_type': 'password'},
         label="Пароль",
-        required=False
+        required=True,
+        min_length=8,
+        help_text="Пароль должен содержать минимум 8 символов"        
     )
 
     def create(self, validated_data):

@@ -1,3 +1,5 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -11,6 +13,9 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     OpenApiTypes,
 )
+
+from order_service.api.repositories import ProductRepository
+from order_service.api.services import OrderService
 
 from .models import Supplier, Category, Product, Stock, Order, UserProfile
 from .serializers import (
@@ -213,7 +218,21 @@ class OrderViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(buyer=self.request.user)
+        """Создаёт заказ с использованием сервиса и текущего пользователя."""
+        try:
+            order_data = serializer.validated_data
+            order = OrderService.create_order(order_data, self.request.user)
+            serializer.instance = order  # Обновляем экземпляр сериализатора
+        except ValueError as e:
+            raise Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+                )
+        except DatabaseError as e:
+            raise Response(
+                {'error': f'Ошибка базы данных: {e}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
     @extend_schema(
         summary="Повторить заказ",
@@ -228,29 +247,25 @@ class OrderViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'])
     def reorder(self, request, pk=None):
+        """
+        Создаёт новый заказ на основе существующего.
+        Проверяет наличие товаров на складе перед копированием.
+        """
+        # Получаем исходный заказ
         original_order = self.get_object()
-
-        # Создаем новый заказ с теми же товарами
-        order_data = {
-            'buyer': request.user.id,
-            'items': []
-        }
-
-        for item in original_order.items.all():
-            order_data['items'].append({
-                'product': item.product.id,
-                'quantity': item.quantity,
-                'purchase_price': str(item.purchase_price)
-            })
-
-        serializer = self.get_serializer(data=order_data)
-        serializer.is_valid(raise_exception=True)
-        new_order = serializer.save()
-
-        return Response(
-            OrderSerializer(new_order).data,
-            status=status.HTTP_201_CREATED
-        )
+    
+        try:
+            # Вызываем сервис для создания нового заказа
+            new_order = OrderService.reorder_order(original_order, request.user)
+            return Response(
+                OrderSerializer(new_order).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @extend_schema(
